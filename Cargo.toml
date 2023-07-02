@@ -2,5 +2,20 @@
 name = "elewrap"
 version = "0.1.0"
 edition = "2021"
+authors = ["oddlama <oddlama@oddlama.org>"]
+description = """
+Controlled static privilege escalation utility. No dynamic configuration.
+The most restrictive and lightweight replacement for sudo, doas or please.
+"""
+documentation = "https://github.com/oddlama/elewrap"
+homepage = "https://github.com/oddlama/elewrap"
+repository = "https://github.com/oddlama/elewrap"
+keywords = ["access", "elevation", "privileges", "sudo"]
+categories = ["command-line-utilities"]
+license = "MIT"
 
 [dependencies]
+anyhow = "1.0.71"
+libc = "0.2.147"
+nix = "0.26.2"
+users = "0.11.0"
