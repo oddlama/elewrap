@@ -5,6 +5,8 @@ inputs: {
 }: let
   inherit
     (lib)
+    head
+    isPath
     literalExpression
     mkOption
     types
@@ -75,6 +77,17 @@ in {
       };
 
       config = {
+        assertions = [
+          {
+            assertion = (config.allowedUsers == []) != (config.allowedGroups == []);
+            message = "security.elewrap.${config._module.args.name}: Either allowedUsers or allowedGroups must be set!";
+          }
+          {
+            assertion = isPath (head config.command);
+            message = "security.elewrap.${config._module.args.name}: The command executable must be a path!";
+          }
+        ];
+
         security.wrappers."elewrap-${config._module.args.name}" = {
           source = pkgs.mkElewrap {
             inherit
@@ -102,7 +115,4 @@ in {
       };
     }));
   };
-
-  # TODO assert allowedUsers != [] || allowedGroups != []
-  # TODO assert command[0] type is path
 }
