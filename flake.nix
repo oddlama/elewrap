@@ -1,5 +1,5 @@
 {
-  description = "TODO";
+  description = "👑 Controlled static privilege escalation utility with baked-in authentication rules. The most restrictive and lightweight replacement for sudo, doas or please.";
   inputs = {
     crane = {
       url = "github:ipetkov/crane";
@@ -28,48 +28,38 @@
     flake-utils,
     nixpkgs,
     pre-commit-hooks,
-  }:
-    flake-utils.lib.eachDefaultSystem (system: let
+  } @ inputs:
+    {
+      # Expose NixOS module
+      nixosModules.elewrap = import ./nix/module.nix inputs;
+      nixosModules.default = self.nixosModules.elewrap;
+
+      # A nixpkgs overlay that adds the parametrized builder as a package
+      overlays.default = self.overlays.elewrap;
+      overlays.elewrap = final: prev: {
+        inherit (import ./nix/elewrap.nix crane prev.pkgs) mkElewrap;
+      };
+    }
+    // flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {inherit system;};
       inherit (pkgs) lib;
       craneLib = crane.lib.${system};
 
-      src = craneLib.cleanCargoSource (craneLib.path ./.);
+      inherit
+        (import ./nix/elewrap.nix crane pkgs)
+        cargoArtifacts
+        commonArgs
+        dummyElewrapEnvironment
+        src
+        ;
 
-      commonArgs = {
-        inherit src;
-
-        buildInputs =
-          [
-            # Add additional build inputs here
-          ]
-          ++ lib.optionals pkgs.stdenv.isDarwin [
-            # Additional darwin specific inputs can be set here
-            pkgs.libiconv
-          ];
-
-        ELEWRAP_ALLOWED_USERS = "";
-        ELEWRAP_ALLOWED_GROUPS = "";
-        ELEWRAP_TARGET_USER = "nobody";
-        ELEWRAP_TARGET_COMMAND = lib.concatStringsSep "\t" ["id" "-u"];
-        ELEWRAP_PASS_RUNTIME_ARGUMENTS = "false";
-      };
-
-      # Build *just* the cargo dependencies, so we can reuse
-      # all of that work (e.g. via cachix) when running in CI
-      cargoArtifacts = craneLib.buildDepsOnly commonArgs;
-
-      # Build the actual crate itself, reusing the dependency
-      # artifacts from above.
-      elewrap = craneLib.buildPackage (commonArgs
-        // {
-          inherit cargoArtifacts;
-        });
+      # Add environment variables to allow a successful compile
+      checkArgs = commonArgs // dummyElewrapEnvironment;
     in {
       checks =
         {
-          # Build the crate as part of `nix flake check` for convenience
-          inherit elewrap;
+          # Build a dummy crate as part of `nix flake check` for convenience
+          elewrapDummy = craneLib.buildPackage checkArgs;
 
           # Run clippy (and deny all warnings) on the crate source,
           # again, resuing the dependency artifacts from above.
@@ -77,13 +67,13 @@
           # Note that this is done as a separate derivation so that
           # we can block the CI if there are issues here, but not
           # prevent downstream consumers from building our crate by itself.
-          elewrap-clippy = craneLib.cargoClippy (commonArgs
+          elewrap-clippy = craneLib.cargoClippy (checkArgs
             // {
               inherit cargoArtifacts;
               cargoClippyExtraArgs = "--all-targets -- --deny warnings";
             });
 
-          elewrap-doc = craneLib.cargoDoc (commonArgs
+          elewrap-doc = craneLib.cargoDoc (checkArgs
             // {
               inherit cargoArtifacts;
             });
@@ -101,7 +91,7 @@
           # Run tests with cargo-nextest
           # Consider setting `doCheck = false` on `elewrap` if you do not want
           # the tests to run twice
-          elewrap-nextest = craneLib.cargoNextest (commonArgs
+          elewrap-nextest = craneLib.cargoNextest (checkArgs
             // {
               inherit cargoArtifacts;
               partitions = 1;
@@ -121,27 +111,22 @@
         // lib.optionalAttrs (system == "x86_64-linux") {
           # NB: cargo-tarpaulin only supports x86_64 systems
           # Check code coverage (note: this will not upload coverage anywhere)
-          elewrap-coverage = craneLib.cargoTarpaulin (commonArgs
+          elewrap-coverage = craneLib.cargoTarpaulin (checkArgs
             // {
               inherit cargoArtifacts;
             });
         };
 
-      formatter = pkgs.alejandra; # `nix fmt`
-
-      packages.default = elewrap; # `nix build`
-      packages.elewrap = elewrap; # `nix build .#elewrap`
-
-      # `nix run`
-      apps.default = flake-utils.lib.mkApp {drv = elewrap;};
-
       # `nix develop`
-      devShells.default = pkgs.mkShell {
-        inherit (self.checks.${system}.pre-commit) shellHook;
-        inputsFrom = lib.attrValues self.checks.${system};
-        buildInputs =
-          commonArgs.buildInputs
-          ++ (with pkgs; [cargo rustc rustfmt]);
-      };
+      devShells.default = pkgs.mkShell (dummyElewrapEnvironment
+        // {
+          inherit (self.checks.${system}.pre-commit) shellHook;
+          inputsFrom = lib.attrValues self.checks.${system};
+          buildInputs =
+            commonArgs.buildInputs
+            ++ (with pkgs; [cargo rustc rustfmt statix]);
+        });
+
+      formatter = pkgs.alejandra; # `nix fmt`
     });
 }

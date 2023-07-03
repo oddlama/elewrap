@@ -7,15 +7,6 @@ use std::os::unix::process::CommandExt;
 use std::{ffi::CString, process::Command};
 use users::{get_group_by_name, get_user_by_name, group_access_list};
 
-macro_rules! unwrap_or {
-    ($opt: expr, $def: expr) => {
-        match $opt {
-            Some(x) => x,
-            None => $def,
-        }
-    };
-}
-
 /// A comma separated list of users for which to allow elevation of privileges using this utility.
 /// Leave unset for an empty list.
 /// Optional.
@@ -29,8 +20,10 @@ const ALLOWED_GROUPS: Option<&str> = option_env!("ELEWRAP_ALLOWED_GROUPS");
 const TARGET_USER: &str = env!("ELEWRAP_TARGET_USER");
 /// The delimiter on which to split the target command.
 /// Default: "\t"
-const TARGET_COMMAND_DELIMITER: &str =
-    unwrap_or!(option_env!("ELEWRAP_TARGET_COMMAND_DELIMITER"), "\t");
+const TARGET_COMMAND_DELIMITER: &str = match option_env!("ELEWRAP_TARGET_COMMAND_DELIMITER") {
+    Some(x) => x,
+    None => "\t",
+};
 /// The command to execute after changing to the target user. This must be an absolute path.
 /// Required.
 const TARGET_COMMAND: &[&str] =
@@ -46,7 +39,7 @@ const PASS_RUNTIME_ARGUMENTS: bool = match option_env!("ELEWRAP_PASS_RUNTIME_ARG
 };
 
 // The target command must have at least one component
-static_assertions::const_assert!(TARGET_COMMAND.len() > 0);
+static_assertions::const_assert!(!TARGET_COMMAND.is_empty());
 
 /// Drop all privileges and change to the target user.
 fn drop_privileges() -> Result<()> {
@@ -70,14 +63,14 @@ fn drop_privileges() -> Result<()> {
 fn authorize(caller_uid: Uid, caller_gids: &[u32]) -> Result<()> {
     let is_allowed_user = || {
         ALLOWED_USERS.map_or(false, |xs| {
-            xs.split(",")
+            xs.split(',')
                 .any(|x| get_user_by_name(x).map_or(false, |x| x.uid() == caller_uid.as_raw()))
         })
     };
 
     let has_allowed_group = || {
         ALLOWED_GROUPS.map_or(false, |xs| {
-            xs.split(",")
+            xs.split(',')
                 .any(|x| get_group_by_name(x).map_or(false, |x| caller_gids.contains(&x.gid())))
         })
     };
@@ -113,7 +106,7 @@ fn main() -> Result<()> {
     // The target command must be an absolute path
     // XXX: this can be done statically, but not in ed 2021 without going unstable
     ensure!(
-        TARGET_COMMAND[0].starts_with("/"),
+        TARGET_COMMAND[0].starts_with('/'),
         "The target command must use an absolute path"
     );
 
@@ -134,6 +127,7 @@ fn main() -> Result<()> {
 
     // Drop privileges as soon as possible
     drop_privileges()?;
+    // TODO clear environment
 
     // Authorization the calling user
     authorize(caller_uid, &caller_gids)?;
