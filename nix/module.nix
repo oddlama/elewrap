@@ -101,18 +101,20 @@ in {
 
     security.wrappers = flip mapAttrs' cfg (name: elewrapCfg:
       nameValuePair "elewrap-${name}" {
-        source = pkgs.mkElewrap {
-          inherit
-            (elewrapCfg)
-            allowedGroups
-            allowedUsers
-            command
-            passRuntimeArguments
-            targetUser
-            verifySha512
-            ;
-          extraCraneArgs.pnameSuffix = "-${name}";
-        };
+        source = let
+          drv = pkgs.mkElewrap {
+            inherit
+              (elewrapCfg)
+              allowedGroups
+              allowedUsers
+              command
+              passRuntimeArguments
+              targetUser
+              verifySha512
+              ;
+            extraCraneArgs.pnameSuffix = "-${name}";
+          };
+        in "${drv}/bin/elewrap";
 
         setuid = true;
         owner = elewrapCfg.targetUser;
