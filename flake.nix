@@ -117,6 +117,12 @@
             });
         };
 
+      # Test elewrap and the nixos module by using
+      # `nix build --no-link --print-out-paths -L .#nixosTests.x86_64-linux.elewrap`
+      nixosTests.elewrap = import ./tests/elewrap.nix {
+        inherit self pkgs;
+      };
+
       # `nix develop`
       devShells.default = pkgs.mkShell (dummyElewrapEnvironment
         // {

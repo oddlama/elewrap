@@ -1,16 +1,25 @@
 inputs: {
+  config,
   lib,
   pkgs,
   ...
 }: let
   inherit
     (lib)
+    attrNames
+    concatLists
+    flip
     head
-    isPath
     literalExpression
+    mapAttrs'
+    mapAttrsToList
     mkOption
+    nameValuePair
+    pathExists
     types
     ;
+
+  cfg = config.security.elewrap;
 in {
   options.security.elewrap = mkOption {
     default = {};
@@ -75,44 +84,46 @@ in {
           description = "Whether to verify the sha512 of the target executable at runtime before executing it.";
         };
       };
-
-      config = {
-        assertions = [
-          {
-            assertion = (config.allowedUsers == []) != (config.allowedGroups == []);
-            message = "security.elewrap.${config._module.args.name}: Either allowedUsers or allowedGroups must be set!";
-          }
-          {
-            assertion = isPath (head config.command);
-            message = "security.elewrap.${config._module.args.name}: The command executable must be a path!";
-          }
-        ];
-
-        security.wrappers."elewrap-${config._module.args.name}" = {
-          source = pkgs.mkElewrap {
-            inherit
-              (config)
-              allowedGroups
-              allowedUsers
-              command
-              passRuntimeArguments
-              targetUser
-              verifySha512
-              ;
-            extraCraneArgs.pnameSuffix = "-${config._module.args.name}";
-          };
-          setuid = true;
-          owner = config.targetUser;
-          group = "root";
-          # Allow anyone to execute this, elewrap will take care of authenticating the user.
-          # Also allow read permissions to the setuid user so the sha512 can be verified
-          # before executing the target program.
-          permissions =
-            if config.verifySha512
-            then "401"
-            else "001";
-        };
-      };
     }));
+  };
+
+  config = {
+    assertions = concatLists (flip mapAttrsToList cfg (name: elewrapCfg: [
+      {
+        assertion = (elewrapCfg.allowedUsers == []) != (elewrapCfg.allowedGroups == []);
+        message = "security.elewrap.${name}: Either allowedUsers or allowedGroups must be set!";
+      }
+      {
+        assertion = pathExists (head elewrapCfg.command);
+        message = "security.elewrap.${name}: The command executable must be an existing path!";
+      }
+    ]));
+
+    security.wrappers = flip mapAttrs' cfg (name: elewrapCfg:
+      nameValuePair "elewrap-${name}" {
+        source = pkgs.mkElewrap {
+          inherit
+            (elewrapCfg)
+            allowedGroups
+            allowedUsers
+            command
+            passRuntimeArguments
+            targetUser
+            verifySha512
+            ;
+          extraCraneArgs.pnameSuffix = "-${name}";
+        };
+
+        setuid = true;
+        owner = elewrapCfg.targetUser;
+        group = "root";
+        # Allow anyone to execute this, elewrap will take care of authenticating the user.
+        # Also allow read permissions to the setuid user so the sha512 can be verified
+        # before executing the target program.
+        permissions =
+          if elewrapCfg.verifySha512
+          then "u+r,o+x"
+          else "o+x";
+      });
   };
 }

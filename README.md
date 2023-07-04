@@ -12,5 +12,3 @@ or 4401 in case you want to verify the sha512 of the binary before executing it.
 
 Includes a NixOS module to allow declaring wrappers easily and can be used to replace
 sudo, doas or please with elewrap as a more minimal alternative.
-
-# TODO nixos tests
