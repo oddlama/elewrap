@@ -61,13 +61,12 @@
     # wait for our service to start
     machine.wait_for_unit("multi-user.target")
 
-    output = machine.succeed("ls -laF /run/wrappers/bin/")
-    import sys
-    print(output, file=sys.stderr)
     output = machine.succeed("runuser -u test1 /run/wrappers/bin/elewrap-id-as-root")
     assert output == "uid=0(root) gid=0(root) groups=0(root)\n"
 
     output = machine.succeed("runuser -u test1 /run/wrappers/bin/elewrap-id-as-test2")
+    import sys
+    print(output, file=sys.stderr)
     assert output == "uid=802(test2) gid=802(test2) groups=802(test2)\n"
 
     output = machine.succeed("runuser -u test1 /run/wrappers/bin/elewrap-id-as-test3")

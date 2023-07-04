@@ -96,13 +96,6 @@ fn sha512_digest(path: &str) -> Result<String> {
 }
 
 fn main() -> Result<()> {
-    println!("allowed users:  {ALLOWED_USERS:?}");
-    println!("allowed groups: {ALLOWED_GROUPS:?}");
-    println!("target user:    {TARGET_USER:?}");
-    println!("target command: {TARGET_COMMAND:?}");
-    println!("target sha512:  {TARGET_COMMAND_SHA512:?}");
-    println!("pass args:      {PASS_RUNTIME_ARGUMENTS:?}");
-
     // The target command must be an absolute path
     // XXX: this can be done statically, but not in ed 2021 without going unstable
     ensure!(
