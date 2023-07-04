@@ -117,7 +117,7 @@ in {
         in "${drv}/bin/elewrap";
 
         setuid = true;
-        owner = elewrapCfg.targetUser;
+        owner = "root";
         group = "root";
         # Allow anyone to execute this, elewrap will take care of authenticating the user.
         # Also allow read permissions to the setuid user so the sha512 can be verified

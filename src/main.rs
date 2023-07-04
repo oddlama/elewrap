@@ -96,6 +96,9 @@ fn sha512_digest(path: &str) -> Result<String> {
 }
 
 fn main() -> Result<()> {
+    // Drop all environment variables that were not explicitly allowed
+    //TODO drop_environment()?;
+
     // The target command must be an absolute path
     // XXX: this can be done statically, but not in ed 2021 without going unstable
     ensure!(
@@ -120,7 +123,6 @@ fn main() -> Result<()> {
 
     // Drop privileges as soon as possible
     drop_privileges()?;
-    // TODO clear environment
 
     // Authorization the calling user
     authorize(caller_uid, &caller_gids)?;
