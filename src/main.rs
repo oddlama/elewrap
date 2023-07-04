@@ -1,6 +1,8 @@
 use anyhow::{ensure, Context, Result};
 use nix::unistd::{initgroups, setresgid, setresuid, Gid, Uid};
 use sha2::{Digest, Sha512};
+use std::env;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::os::unix::process::CommandExt;
@@ -31,6 +33,12 @@ const TARGET_COMMAND: &[&str] =
 /// If set, authenticates the target command via its sha512 hash at runtime.
 /// Optional.
 const TARGET_COMMAND_SHA512: Option<&str> = option_env!("ELEWRAP_TARGET_COMMAND_SHA512");
+
+/// A comma separated list of environment variables which should be allowed to be
+/// passed to the target command.
+/// Leave unset for an empty list.
+/// Optional.
+const PASS_ENVIRONMENT: Option<&str> = option_env!("ELEWRAP_PASS_ENVIRONMENT");
 /// Whether additional runtime arguments should be supplied to the executed command
 /// Default: false
 const PASS_RUNTIME_ARGUMENTS: bool = match option_env!("ELEWRAP_PASS_RUNTIME_ARGUMENTS") {
@@ -79,6 +87,18 @@ fn authorize(caller_uid: Uid, caller_gids: &[u32]) -> Result<()> {
     Ok(())
 }
 
+/// Drops all environment variables that are not in the allowlist
+fn drop_environment() {
+    let allowed_vars =
+        PASS_ENVIRONMENT.map_or_else(|| Vec::new(), |xs| xs.split(',').map(OsStr::new).collect());
+    for (name, _) in env::vars_os() {
+        if !allowed_vars.contains(&name.as_os_str()) {
+            env::remove_var(&name);
+        }
+    }
+}
+
+/// Computes the sha512 digest of the given file path in lowercase hexadecimal notation
 fn sha512_digest(path: &str) -> Result<String> {
     let input = File::open(path)?;
     let mut reader = BufReader::new(input);
@@ -96,8 +116,8 @@ fn sha512_digest(path: &str) -> Result<String> {
 }
 
 fn main() -> Result<()> {
-    // Drop all environment variables that were not explicitly allowed
-    //TODO drop_environment()?;
+    // Drop all environment variables that were not explicitly allowed right now
+    drop_environment();
 
     // The target command must be an absolute path
     // XXX: this can be done statically, but not in ed 2021 without going unstable

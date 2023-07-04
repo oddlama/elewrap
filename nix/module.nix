@@ -72,6 +72,12 @@ in {
           description = "The .";
         };
 
+        passEnvironment = mkOption {
+          default = [];
+          type = types.listOf types.str;
+          description = "The environment variables in this list will be allowed to be passed to the target command. Anything else will be erased.";
+        };
+
         passRuntimeArguments = mkOption {
           default = false;
           type = types.bool;
@@ -90,7 +96,7 @@ in {
   config = {
     assertions = concatLists (flip mapAttrsToList cfg (name: elewrapCfg: [
       {
-        assertion = (elewrapCfg.allowedUsers == []) != (elewrapCfg.allowedGroups == []);
+        assertion = elewrapCfg.allowedUsers != [] || elewrapCfg.allowedGroups != [];
         message = "security.elewrap.${name}: Either allowedUsers or allowedGroups must be set!";
       }
       {
@@ -108,6 +114,7 @@ in {
               allowedGroups
               allowedUsers
               command
+              passEnvironment
               passRuntimeArguments
               targetUser
               verifySha512

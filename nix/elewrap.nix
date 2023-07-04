@@ -28,6 +28,7 @@ crane: pkgs: let
     commandDelimiter ? "\t",
     allowedUsers ? [],
     allowedGroups ? [],
+    passEnvironment ? [],
     passRuntimeArguments ? false,
     verifySha512 ? true,
     ...
@@ -39,6 +40,9 @@ crane: pkgs: let
       ELEWRAP_TARGET_COMMAND = lib.concatStringsSep commandDelimiter command;
       ELEWRAP_TARGET_COMMAND_DELIMITER = commandDelimiter;
       ELEWRAP_PASS_RUNTIME_ARGUMENTS = toString passRuntimeArguments;
+    }
+    // lib.optionalAttrs (passEnvironment != []) {
+      ELEWRAP_PASS_ENVIRONMENT = lib.concatStringsSep "," passEnvironment;
     }
     // lib.optionalAttrs verifySha512 {
       ELEWRAP_TARGET_COMMAND_SHA512 = builtins.hashFile "sha512" (lib.head command);
