@@ -1,6 +1,6 @@
-[Building](#building) \| [Installation](#installation-on-nixos) \| [Usage](#usage) \| [Module options](#module-options)
+[Building](#building) \| [Installation](#installation-and-usage-on-nixos) \| [Module options](#module-options)
 
-# 🥙 Elewrap
+## 🥙 Elewrap
 
 This is a tiny setuid wrapper program allowing for controlled elevation of privileges,
 similar to sudo, doas or please but with significantly less complexity and no dynamic configuration.
@@ -87,7 +87,7 @@ pointing telegraf to the new executable.
 }
 ```
 
-# Module options
+## ❄️ Module options
 
 ## `security.elewrap`
 
