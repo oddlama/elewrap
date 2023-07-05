@@ -75,7 +75,7 @@ pointing telegraf to the new executable.
   security.elewrap.sensors = {
     # We already specify the necessary parameters here
     # and (by default) ignore any arguments passed at runtime
-    command = ["${pkgs.lm-sensors}/bin/sensors" "-A" "-u"];
+    command = ["${pkgs.lm_sensors}/bin/sensors" "-A" "-u"];
     # Run as root
     targetUser = "root";
     # Only allow telegraf to elevate privileges
@@ -108,7 +108,7 @@ to run the given command with elevated permissions.
 
 | Type    | `listOf (either str path)` |
 |---------|-----|
-| Example | `["${pkgs.lm-sensors}/bin/sensors"]` |
+| Example | `["${pkgs.lm_sensors}/bin/sensors"]` |
 
 The command that is executed after elevating privileges.
 May include arguments. The first element (the executable) must be a path.

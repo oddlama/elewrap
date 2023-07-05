@@ -28,7 +28,7 @@ in {
         sensors = {
           # We already specify the necessary parameters here and
           # (by default) ignore any arguments passed at runtime
-          command = ["${pkgs.lm-sensors}/bin/sensors" "-A" "-u"];
+          command = ["${pkgs.lm_sensors}/bin/sensors" "-A" "-u"];
           # Run as root
           targetUser = "root";
           # Only allow telegraf to elevate privileges
@@ -56,7 +56,7 @@ in {
 
         command = mkOption {
           type = types.listOf (types.either types.str types.path);
-          example = literalExpression ''["''${pkgs.lm-sensors}/bin/sensors"]'';
+          example = literalExpression ''["''${pkgs.lm_sensors}/bin/sensors"]'';
           description = ''
             The command that is executed after elevating privileges.
             May include arguments. The first element (the executable) must be a path.

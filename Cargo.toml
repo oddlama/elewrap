@@ -1,10 +1,10 @@
 [package]
 name = "elewrap"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["oddlama <oddlama@oddlama.org>"]
 description = """
-Controlled static privilege escalation utility. No dynamic configuration.
+Controlled static privilege escalation utility with baked-in authentication rules.
 The most restrictive and lightweight replacement for sudo, doas or please.
 """
 documentation = "https://github.com/oddlama/elewrap"
