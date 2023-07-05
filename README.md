@@ -1,4 +1,4 @@
-[Building](#building) \| [Installation](#installation-and-usage-on-nixos) \| [Module options](#module-options)
+[Building](#building) \| [Installation and Usage](#installation-and-usage-on-nixos) \| [Module options](#%EF%B8%8F-module-options)
 
 ## 🥙 Elewrap
 
