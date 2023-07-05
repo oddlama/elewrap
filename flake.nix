@@ -1,5 +1,5 @@
 {
-  description = "👑 Controlled static privilege escalation utility with baked-in authentication rules. The most restrictive and lightweight replacement for sudo, doas or please.";
+  description = "Controlled static privilege escalation utility with baked-in authentication rules. The most restrictive and lightweight replacement for sudo, doas or please.";
   inputs = {
     crane = {
       url = "github:ipetkov/crane";
