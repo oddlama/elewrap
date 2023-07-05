@@ -64,6 +64,8 @@ To use it, add elewrap to your own `flake.nix` and use the module in your nixos 
 }
 ```
 
+If you use a preinitialized `pkgs` package set, make sure to add `elewrap.overlays.default` to your overlays.
+
 Lets say you now want to allow `telegraf` to run `sensors` with elevated permissions.
 This is achieved simply by defining a new wrapper for the target executable in `security.elewrap` and
 pointing telegraf to the new executable.
