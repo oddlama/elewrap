@@ -29,7 +29,7 @@ crane: pkgs: let
     allowedUsers ? [],
     allowedGroups ? [],
     passEnvironment ? [],
-    passRuntimeArguments ? false,
+    passArguments ? false,
     verifySha512 ? true,
     ...
   }:
@@ -39,7 +39,7 @@ crane: pkgs: let
       ELEWRAP_TARGET_USER = targetUser;
       ELEWRAP_TARGET_COMMAND = lib.concatStringsSep commandDelimiter command;
       ELEWRAP_TARGET_COMMAND_DELIMITER = commandDelimiter;
-      ELEWRAP_PASS_RUNTIME_ARGUMENTS = toString passRuntimeArguments;
+      ELEWRAP_PASS_ARGUMENTS = toString passArguments;
     }
     // lib.optionalAttrs (passEnvironment != []) {
       ELEWRAP_PASS_ENVIRONMENT = lib.concatStringsSep "," passEnvironment;

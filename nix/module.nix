@@ -26,21 +26,25 @@ in {
     example = literalExpression ''
       {
         sensors = {
-          source = "''${pkgs.lm-sensors}/bin/sensors";
+          # We already specify the necessary parameters here and
+          # (by default) ignore any arguments passed at runtime
+          command = ["${pkgs.lm-sensors}/bin/sensors" "-A" "-u"];
+          # Run as root
           targetUser = "root";
-          allowedUsers = ["telegraf" "prometheus"];
+          # Only allow telegraf to elevate privileges
+          allowedUsers = ["telegraf"];
         };
       }
     '';
     description = ''
-      Transparently wraps a program to allow for controlled elevation of privileges.
+      Transparently wraps programs to allow controlled elevation of privileges.
       Like sudo, doas or please but the authentication rules are kept simple and will
       be baked into the wrapper at compile-time, cutting down any attack surface
       to the absolute bare minimum.
     '';
     type = types.attrsOf (types.submodule ({config, ...}: {
       options = {
-        wrapper = mkOption {
+        path = mkOption {
           type = types.str;
           readOnly = true;
           default = "/run/wrappers/bin/elewrap-${config._module.args.name}";
@@ -52,24 +56,31 @@ in {
 
         command = mkOption {
           type = types.listOf (types.either types.str types.path);
-          description = "The command that is wrapped and executed by calling.";
+          example = literalExpression ''["''${pkgs.lm-sensors}/bin/sensors"]'';
+          description = ''
+            The command that is executed after elevating privileges.
+            May include arguments. The first element (the executable) must be a path.
+          '';
         };
 
         targetUser = mkOption {
           type = types.str;
-          description = "The user to elevate to, before executing the command.";
+          example = "root";
+          description = "The user to change to before executing the command.";
         };
 
         allowedUsers = mkOption {
           default = [];
+          example = ["user1" "user2"];
           type = types.listOf types.str;
           description = "The users allowed to execute this wrapper.";
         };
 
         allowedGroups = mkOption {
           default = [];
+          example = ["group1" "group2"];
           type = types.listOf types.str;
-          description = "The .";
+          description = "The groups allowed to execute this wrapper.";
         };
 
         passEnvironment = mkOption {
@@ -78,10 +89,13 @@ in {
           description = "The environment variables in this list will be allowed to be passed to the target command. Anything else will be erased.";
         };
 
-        passRuntimeArguments = mkOption {
+        passArguments = mkOption {
           default = false;
           type = types.bool;
-          description = "Whether any given runtime arguments should be appended to the target command.";
+          description = ''
+            Whether any given arguments should be appended to the target command.
+            This will be added to any static arguments given in the command, if any.
+          '';
         };
 
         verifySha512 = mkOption {
@@ -105,6 +119,8 @@ in {
       }
     ]));
 
+    nixpkgs.overlays = [inputs.self.overlays.default];
+
     security.wrappers = flip mapAttrs' cfg (name: elewrapCfg:
       nameValuePair "elewrap-${name}" {
         source = let
@@ -115,7 +131,7 @@ in {
               allowedUsers
               command
               passEnvironment
-              passRuntimeArguments
+              passArguments
               targetUser
               verifySha512
               ;

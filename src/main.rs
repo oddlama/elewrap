@@ -39,9 +39,9 @@ const TARGET_COMMAND_SHA512: Option<&str> = option_env!("ELEWRAP_TARGET_COMMAND_
 /// Leave unset for an empty list.
 /// Optional.
 const PASS_ENVIRONMENT: Option<&str> = option_env!("ELEWRAP_PASS_ENVIRONMENT");
-/// Whether additional runtime arguments should be supplied to the executed command
+/// Whether any additional runtime arguments should be appended to the executed command.
 /// Default: false
-const PASS_RUNTIME_ARGUMENTS: bool = match option_env!("ELEWRAP_PASS_RUNTIME_ARGUMENTS") {
+const PASS_ARGUMENTS: bool = match option_env!("ELEWRAP_PASS_ARGUMENTS") {
     Some(x) => const_str::equal!(x, "true") || const_str::equal!(x, "1"),
     None => false,
 };
@@ -151,7 +151,7 @@ fn main() -> Result<()> {
     let args: Vec<_> = std::env::args_os().skip(1).collect();
     let mut cmd = Command::new(TARGET_COMMAND[0]);
     cmd.args(&TARGET_COMMAND[1..]);
-    if PASS_RUNTIME_ARGUMENTS {
+    if PASS_ARGUMENTS {
         cmd.args(&args);
     }
     Err(cmd.exec().into())

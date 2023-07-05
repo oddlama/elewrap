@@ -11,7 +11,6 @@
     '';
   in {
     imports = [self.nixosModules.default];
-    nixpkgs.overlays = [self.overlays.default];
 
     # Test root privilege escalation
     security.elewrap.id-as-root = {
@@ -47,7 +46,7 @@
       command = [showArguments "--compiledArg1" "--compiledArg2"];
       targetUser = "test1";
       allowedUsers = ["test1"];
-      passRuntimeArguments = true;
+      passArguments = true;
     };
 
     # Ensure that environment is forced empty by default
